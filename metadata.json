@@ -1,0 +1,7 @@
+{
+  "name": "Personal OS – Daily Briefing",
+  "description": "A structured, executive-style morning briefing experience designed to orient you, set priorities, and clear friction with AI-assisted insights.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
