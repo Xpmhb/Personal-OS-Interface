@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Executive Team — Personal AI OS{% endblock %}
+{% block content %}
+<h2>Executive Team</h2>
+
+<div class="grid-2">
+    {% for agent in agents %}
+    <div class="agent-card" id="{{ agent.name }}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4>{{ agent.display_name }}</h4>
+            <span class="status-badge status-{{ agent.status }}">{{ agent.status }}</span>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--pico-muted-color); margin-bottom: 1rem;">
+            {{ agent.spec.role_definition[:150] }}...
+        </p>
+
+        <!-- Run Form -->
+        <form hx-post="/api/agents/{{ agent.id }}/run"
+              hx-target="#result-{{ agent.name }}"
+              hx-swap="innerHTML"
+              hx-indicator="#spinner-{{ agent.name }}">
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" name="prompt" placeholder="Enter prompt..." required
+                       style="margin-bottom: 0; flex: 1;">
+                <button type="submit" style="margin-bottom: 0; white-space: nowrap;">
+                    Run
+                    <span id="spinner-{{ agent.name }}" class="htmx-indicator"> ⏳</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Result Area -->
+        <div id="result-{{ agent.name }}" style="margin-top: 1rem;">
+            {% if agent.last_artifact %}
+            <details>
+                <summary>Last Artifact ({{ agent.last_artifact.created_at }})</summary>
+                <div class="artifact-preview">{{ agent.last_artifact.content }}</div>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// Handle run form submission — send JSON
+document.querySelectorAll('form[hx-post]').forEach(form => {
+    form.addEventListener('htmx:configRequest', (evt) => {
+        const input = form.querySelector('input[name="prompt"]');
+        evt.detail.headers['Content-Type'] = 'application/json';
+        evt.detail.parameters = {};
+        const body = JSON.stringify({ prompt: input.value });
+        evt.detail.body = body;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Activity — Personal AI OS{% endblock %}
+{% block content %}
+<h2>Activity Stream</h2>
+
+<!-- Filters -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+    <select id="filter-agent" onchange="filterActivity()" style="max-width: 200px;">
+        <option value="">All Agents</option>
+        {% for agent in agents %}
+        <option value="{{ agent.id }}">{{ agent.display_name }}</option>
+        {% endfor %}
+    </select>
+    <select id="filter-status" onchange="filterActivity()" style="max-width: 150px;">
+        <option value="">All Status</option>
+        <option value="completed">Completed</option>
+        <option value="running">Running</option>
+        <option value="failed">Failed</option>
+    </select>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Agent</th>
+            <th>Status</th>
+            <th>Prompt</th>
+            <th>Duration</th>
+            <th>Cost</th>
+            <th>Details</th>
+        </tr>
+    </thead>
+    <tbody id="activity-body">
+        {% for exec in executions %}
+        <tr>
+            <td style="font-size: 0.8rem; white-space: nowrap;">{{ exec.started_at }}</td>
+            <td>{{ exec.agent_name }}</td>
+            <td><span class="status-badge status-{{ exec.status }}">{{ exec.status }}</span></td>
+            <td style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                {{ exec.prompt[:80] }}{% if exec.prompt and exec.prompt|length > 80 %}...{% endif %}
+            </td>
+            <td>{{ exec.duration_ms or '-' }}ms</td>
+            <td>${{ "%.4f"|format(exec.cost_estimate_usd or 0) }}</td>
+            <td><a href="/execution/{{ exec.id }}">View →</a></td>
+        </tr>
+        {% endfor %}
+        {% if not executions %}
+        <tr><td colspan="7" style="text-align: center; color: var(--pico-muted-color);">No executions yet</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+function filterActivity() {
+    // Client-side filtering for MVP
+    const agent = document.getElementById('filter-agent').value;
+    const status = document.getElementById('filter-status').value;
+
+    document.querySelectorAll('#activity-body tr').forEach(row => {
+        let show = true;
+        if (agent && !row.innerHTML.includes(agent)) show = false;
+        if (status && !row.innerHTML.includes(status)) show = false;
+        row.style.display = show ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

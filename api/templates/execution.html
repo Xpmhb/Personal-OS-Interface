@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Execution Detail — Personal AI OS{% endblock %}
+{% block content %}
+<h2>Execution Detail</h2>
+
+<a href="/activity">← Back to Activity</a>
+
+<div style="margin-top: 1rem;">
+    <!-- Header -->
+    <div class="agent-card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 style="margin-bottom: 0.3rem;">{{ execution.agent_name }}</h3>
+                <span class="status-badge status-{{ execution.status }}">{{ execution.status }}</span>
+            </div>
+            <div style="text-align: right; font-size: 0.85rem;">
+                <div>Duration: <strong>{{ execution.duration_ms or 0 }}ms</strong></div>
+                <div>Cost: <strong>${{ "%.4f"|format(execution.cost_estimate_usd or 0) }}</strong></div>
+                <div>Tokens: {{ execution.tokens_in or 0 }} in / {{ execution.tokens_out or 0 }} out</div>
+            </div>
+        </div>
+        {% if execution.error %}
+        <div style="margin-top: 1rem; padding: 0.8rem; background: #ef444420; border-radius: 6px; color: #ef4444;">
+            Error: {{ execution.error }}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Prompt -->
+    <h4>Prompt</h4>
+    <div class="artifact-preview" style="margin-bottom: 1.5rem;">{{ execution.prompt }}</div>
+
+    <!-- Tool Calls -->
+    {% if execution.tool_calls %}
+    <h4>Tool Call Timeline</h4>
+    {% for tc in execution.tool_calls %}
+    <div class="agent-card" style="border-left: 3px solid var(--pico-primary);">
+        <div style="display: flex; justify-content: space-between;">
+            <strong>🔧 {{ tc.tool_id }}</strong>
+            <small>{{ tc.duration_ms or 0 }}ms</small>
+        </div>
+        <details>
+            <summary style="font-size: 0.85rem;">Input</summary>
+            <pre class="artifact-preview">{{ tc.input | tojson(indent=2) }}</pre>
+        </details>
+        <details>
+            <summary style="font-size: 0.85rem;">Output</summary>
+            <pre class="artifact-preview">{{ tc.output | tojson(indent=2) }}</pre>
+        </details>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <!-- Artifacts -->
+    {% if execution.artifacts %}
+    <h4>Artifacts</h4>
+    {% for artifact in execution.artifacts %}
+    <div class="agent-card">
+        <h5>{{ artifact.title or 'Untitled' }}</h5>
+        <small>{{ artifact.artifact_type }} — {{ artifact.created_at }}</small>
+        <div class="artifact-preview" style="margin-top: 0.5rem;">{{ artifact.content }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

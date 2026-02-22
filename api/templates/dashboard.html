@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Personal AI OS{% endblock %}
+{% block content %}
+<h2>Dashboard</h2>
+
+<!-- Morning Brief -->
+{% if morning_brief %}
+<div class="brief-card">
+    <h3>📋 Morning Brief</h3>
+    <small>{{ morning_brief.created_at }}</small>
+    <div class="artifact-preview">{{ morning_brief.content }}</div>
+</div>
+{% else %}
+<div class="brief-card">
+    <h3>📋 Morning Brief</h3>
+    <p style="color: var(--pico-muted-color);">No brief yet. The nightly loop will generate one at 2 AM.</p>
+</div>
+{% endif %}
+
+<!-- Quick Stats -->
+<div class="grid-4" style="margin-bottom: 2rem;">
+    <div class="stat-card">
+        <div class="number">{{ stats.total_agents }}</div>
+        <div class="label">Active Agents</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ stats.runs_today }}</div>
+        <div class="label">Runs Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">${{ "%.4f"|format(stats.cost_today) }}</div>
+        <div class="label">Cost Today</div>
+    </div>
+    <div class="stat-card">
+        <div class="number">{{ stats.files_indexed }}</div>
+        <div class="label">Files Indexed</div>
+    </div>
+</div>
+
+<!-- Executive Team Quick View -->
+<h3>Executive Team</h3>
+<div class="grid-4">
+    {% for agent in executives %}
+    <div class="agent-card">
+        <h4>{{ agent.display_name }}</h4>
+        <span class="status-badge status-{{ agent.status }}">{{ agent.status }}</span>
+        {% if agent.last_run %}
+        <p style="font-size: 0.8rem; color: var(--pico-muted-color); margin-top: 0.5rem;">
+            Last run: {{ agent.last_run }}
+        </p>
+        {% endif %}
+        <a href="/executive#{{ agent.name }}">
+            <button class="outline" style="margin-top: 0.5rem; font-size: 0.8rem;">Run →</button>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Recent Activity -->
+<h3 style="margin-top: 2rem;">Recent Activity</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Agent</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Cost</th>
+            <th>Time</th>
+        </tr>
+    </thead>
+    <tbody hx-get="/api/executions?limit=10" hx-trigger="load" hx-swap="innerHTML">
+        {% for exec in recent_executions %}
+        <tr>
+            <td>{{ exec.agent_name }}</td>
+            <td><span class="status-badge status-{{ exec.status }}">{{ exec.status }}</span></td>
+            <td>{{ exec.duration_ms or 0 }}ms</td>
+            <td>${{ "%.4f"|format(exec.cost_estimate_usd or 0) }}</td>
+            <td>{{ exec.started_at }}</td>
+        </tr>
+        {% endfor %}
+        {% if not recent_executions %}
+        <tr><td colspan="5" style="text-align: center; color: var(--pico-muted-color);">No executions yet</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

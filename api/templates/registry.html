@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Agent Registry — Personal AI OS{% endblock %}
+{% block content %}
+<h2>Agent Registry</h2>
+
+<!-- Create New Agent -->
+<details>
+    <summary><strong>+ Create New Agent</strong></summary>
+    <div style="margin-top: 1rem;">
+        <form id="create-form">
+            <label for="description">Describe the agent you want to create:</label>
+            <textarea id="description" name="description" rows="3"
+                      placeholder="I need an agent that analyzes our marketing campaigns and suggests optimizations..."></textarea>
+            <button type="button" onclick="startCreation()">Generate Agent →</button>
+        </form>
+
+        <div id="factory-output" style="margin-top: 1rem;"></div>
+    </div>
+</details>
+
+<!-- Agent List -->
+<table style="margin-top: 2rem;">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Capabilities</th>
+            <th>Schedule</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for agent in agents %}
+        <tr>
+            <td>
+                <strong>{{ agent.display_name }}</strong><br>
+                <small style="color: var(--pico-muted-color);">{{ agent.name }}</small>
+            </td>
+            <td><span class="status-badge status-{{ agent.status }}">{{ agent.status }}</span></td>
+            <td style="font-size: 0.8rem;">
+                {{ agent.spec.capabilities[:3]|join(', ') }}
+                {% if agent.spec.capabilities|length > 3 %}+{{ agent.spec.capabilities|length - 3 }} more{% endif %}
+            </td>
+            <td style="font-size: 0.8rem;">
+                {% if agent.spec.triggers.schedules %}
+                {{ agent.spec.triggers.schedules[0] }}
+                {% else %}
+                Manual only
+                {% endif %}
+            </td>
+            <td>
+                <div style="display: flex; gap: 0.3rem;">
+                    <button class="outline" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;"
+                            onclick="deployAgent('{{ agent.id }}')">Deploy</button>
+                    <button class="outline secondary" style="font-size: 0.75rem; padding: 0.3rem 0.6rem;"
+                            onclick="editAgent('{{ agent.id }}')">Edit</button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        {% if not agents %}
+        <tr><td colspan="5" style="text-align: center; color: var(--pico-muted-color);">No agents registered</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+async function startCreation() {
+    const desc = document.getElementById('description').value;
+    if (!desc) return;
+
+    const output = document.getElementById('factory-output');
+    output.innerHTML = '<p>⏳ Generating agent...</p>';
+
+    try {
+        const res = await fetch('/api/factory/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description: desc })
+        });
+        const data = await res.json();
+
+        if (data.questions) {
+            let html = '<h4>Clarifying Questions:</h4>';
+            data.questions.forEach((q, i) => {
+                html += `<label>${q}</label><input type="text" id="answer-${i}" placeholder="Your answer...">`;
+            });
+            html += `<input type="hidden" id="session-id" value="${data.session_id}">`;
+            html += `<button onclick="submitAnswers(${data.questions.length})">Generate Spec →</button>`;
+            output.innerHTML = html;
+        }
+    } catch (e) {
+        output.innerHTML = `<p style="color: #ef4444;">Error: ${e.message}</p>`;
+    }
+}
+
+async function submitAnswers(count) {
+    const sessionId = document.getElementById('session-id').value;
+    const answers = {};
+    for (let i = 0; i < count; i++) {
+        answers[`q${i}`] = document.getElementById(`answer-${i}`).value;
+    }
+
+    const output = document.getElementById('factory-output');
+    output.innerHTML = '<p>⏳ Generating spec...</p>';
+
+    try {
+        const res = await fetch('/api/factory/clarify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, answers: answers })
+        });
+        const data = await res.json();
+
+        if (data.spec) {
+            output.innerHTML = `
+                <h4>Generated Spec:</h4>
+                <pre class="artifact-preview">${JSON.stringify(data.spec, null, 2)}</pre>
+                <button onclick="saveSpec(${JSON.stringify(data.spec).replace(/"/g, '&quot;')})">
+                    Save & Deploy →
+                </button>`;
+        }
+    } catch (e) {
+        output.innerHTML = `<p style="color: #ef4444;">Error: ${e.message}</p>`;
+    }
+}
+
+async function saveSpec(spec) {
+    try {
+        const res = await fetch('/api/agents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ spec: spec })
+        });
+        if (res.ok) {
+            window.location.reload();
+        }
+    } catch (e) {
+        alert('Error saving agent: ' + e.message);
+    }
+}
+
+async function deployAgent(agentId) {
+    await fetch(`/api/agents/${agentId}/deploy`, { method: 'POST' });
+    window.location.reload();
+}
+
+function editAgent(agentId) {
+    window.location.href = `/execution/${agentId}`;
+}
+</script>
+{% endblock %}

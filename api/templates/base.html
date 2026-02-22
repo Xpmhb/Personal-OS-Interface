@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal AI OS{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        :root {
+            --pico-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body { min-height: 100vh; }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 220px;
+            background: var(--pico-card-background-color);
+            border-right: 1px solid var(--pico-muted-border-color);
+            padding: 1.5rem 1rem;
+            z-index: 100;
+        }
+        .sidebar h3 { margin-bottom: 1.5rem; font-size: 1.1rem; }
+        .sidebar nav a {
+            display: block;
+            padding: 0.6rem 0.8rem;
+            margin-bottom: 0.3rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--pico-color);
+            font-size: 0.9rem;
+        }
+        .sidebar nav a:hover, .sidebar nav a.active {
+            background: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+        }
+        .main-content {
+            margin-left: 220px;
+            padding: 2rem;
+            max-width: 1200px;
+        }
+        .agent-card {
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+        }
+        .agent-card h4 { margin-bottom: 0.5rem; }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-active { background: #22c55e20; color: #22c55e; }
+        .status-running { background: #3b82f620; color: #3b82f6; }
+        .status-completed { background: #22c55e20; color: #22c55e; }
+        .status-failed { background: #ef444420; color: #ef4444; }
+        .status-deployed { background: #a855f720; color: #a855f7; }
+        .status-queued { background: #f59e0b20; color: #f59e0b; }
+        .brief-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .stat-card {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 8px;
+        }
+        .stat-card .number { font-size: 2rem; font-weight: 700; }
+        .stat-card .label { font-size: 0.8rem; color: var(--pico-muted-color); }
+        .artifact-preview {
+            background: var(--pico-card-background-color);
+            border: 1px solid var(--pico-muted-border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .loading { opacity: 0.5; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline; }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            background: var(--pico-primary);
+            color: white;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h3>🧠 AI OS</h3>
+        <nav>
+            <a href="/" {% if active == 'dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
+            <a href="/executive" {% if active == 'executive' %}class="active"{% endif %}>👥 Executive Team</a>
+            <a href="/registry" {% if active == 'registry' %}class="active"{% endif %}>📋 Agent Registry</a>
+            <a href="/activity" {% if active == 'activity' %}class="active"{% endif %}>⚡ Activity</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
