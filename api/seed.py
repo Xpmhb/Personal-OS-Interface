@@ -33,7 +33,7 @@ def load_default_agents():
             print(f"Specs directory not found: {specs_dir}")
             return
 
-            for spec_file in specs_dir.glob("*.spec.json"):
+        for spec_file in specs_dir.glob("*.spec.json"):
                 try:
                     with open(spec_file) as f:
                         spec = json.load(f)

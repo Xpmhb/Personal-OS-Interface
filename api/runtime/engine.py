@@ -20,6 +20,23 @@ from runtime.tracing import trace_agent_run
 
 logger = logging.getLogger(__name__)
 
+# LangWatch tracing - initialized at app startup
+_langwatch = None
+
+
+def _get_langwatch():
+    """Get LangWatch module if available"""
+    global _langwatch
+    if _langwatch is None:
+        try:
+            import langwatch
+            # Ensure setup with API key
+            langwatch.ensure_setup()
+            _langwatch = langwatch
+        except ImportError:
+            pass
+    return _langwatch
+
 
 async def execute_agent(
     db: Session,
@@ -32,6 +49,14 @@ async def execute_agent(
 
     settings = get_settings()
     start_time = time.time()
+
+    # Get LangWatch for tracing
+    lw = _get_langwatch()
+
+    # Load agent first
+    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    if not agent:
+        raise ValueError(f"Agent {agent_id} not found")
 
     # Load agent
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
@@ -91,6 +116,17 @@ async def execute_agent(
         max_iterations = 5  # Prevent infinite tool call loops
 
         for iteration in range(max_iterations):
+            # Create span for LLM call
+            llm_span = None
+            if lw:
+                try:
+                    llm_span = lw.span(
+                        name=f"LLM call {iteration + 1}",
+                        type="llm"
+                    )
+                except Exception as e:
+                    logger.warning(f"LangWatch span failed: {e}")
+
             async with httpx.AsyncClient(timeout=120.0) as client:
                 payload = {
                     "model": model,
@@ -112,6 +148,15 @@ async def execute_agent(
                 )
                 response.raise_for_status()
                 data = response.json()
+
+            # End LLM span
+            if llm_span:
+                try:
+                    llm_span.end(
+                        output={"content": data["choices"][0]["message"].get("content", "")[:500]}
+                    )
+                except Exception:
+                    pass
 
             # Track tokens
             usage = data.get("usage", {})

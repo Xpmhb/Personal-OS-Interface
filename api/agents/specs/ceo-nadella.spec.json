@@ -10,7 +10,7 @@
   "capabilities": ["strategic_planning", "cultural_leadership", "team_empowerment", "transformation"],
   "tools_allowed": [{"tool_id": "file_search", "ops": ["read"]}, {"tool_id": "sql_query", "ops": ["read"]}],
   "memory": {"scope": "private", "max_tokens": 8000, "retention_days": 90},
-  "data_permissions": {"datasets": [], "tables": ["metrics"], "vector_namespaces": ["strategy"], "files": []},
+  "data_permissions": {"datasets": [], "tables": ["metrics"], "vector_namespaces": ["default", "strategy"], "files": []},
   "triggers": {"manual": true, "schedules": ["0 2 * * *"], "events": []},
   "guardrails": {"budget_usd_per_day": 15.0, "max_tool_calls_per_run": 50, "approval_required_ops": ["delete"]},
   "llm": {"model": "anthropic/claude-3.5-sonnet", "temperature": 0.3, "max_tokens": 4096},

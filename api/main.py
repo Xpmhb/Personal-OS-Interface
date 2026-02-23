@@ -2,18 +2,42 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
+import os
+
+# Set LangWatch API key BEFORE any other imports
+from config import get_settings
+_settings = get_settings()
+if _settings.langwatch_api_key:
+    os.environ["LANGWATCH_API_KEY"] = _settings.langwatch_api_key
 
 from database import engine, Base
-from config import get_settings
 from agents.router import router as agents_router
 from agents.factory_router import router as factory_router
 from intelligence.router import router as intelligence_router
 from monitoring.router import router as monitoring_router
 from ui import router as ui_router
 
-settings = get_settings()
+settings = _settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+# Initialize LangWatch for observability
+def init_langwatch():
+    """Initialize LangWatch for agent tracing"""
+    try:
+        import langwatch
+        import os
+        # Set API key from settings
+        if settings.langwatch_api_key:
+            os.environ["LANGWATCH_API_KEY"] = settings.langwatch_api_key
+            logger.info("LangWatch API key configured")
+        else:
+            logger.info("LangWatch API key not set, skipping")
+    except ImportError:
+        logger.warning("langwatch not installed")
+    except Exception as e:
+        logger.warning(f"Failed to initialize LangWatch: {e}")
 
 
 @asynccontextmanager
@@ -21,6 +45,9 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Creating database tables...")
     Base.metadata.create_all(bind=engine)
+
+    # Initialize LangWatch
+    init_langwatch()
 
     # Seed default agents
     logger.info("Seeding default agents...")

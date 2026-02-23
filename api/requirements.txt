@@ -15,4 +15,4 @@ tiktoken==0.5.2
 passlib==1.7.4
 python-jose==3.3.0
 cryptography==42.0.0
-langwatch==0.0.4
+langwatch==0.13.0

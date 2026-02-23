@@ -3,6 +3,7 @@ LangWatch integration for agent observability
 """
 import os
 import logging
+from config import get_settings
 
 logger = logging.getLogger(__name__)
 
