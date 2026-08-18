@@ -15,6 +15,8 @@ from agents.router import router as agents_router
 from agents.factory_router import router as factory_router
 from intelligence.router import router as intelligence_router
 from monitoring.router import router as monitoring_router
+from workspace import router as workspace_router, seed_workspace_demo
+from clickup_webhook import router as clickup_router
 from ui import router as ui_router
 
 settings = _settings
@@ -49,10 +51,11 @@ async def lifespan(app: FastAPI):
     # Initialize LangWatch
     init_langwatch()
 
-    # Seed default agents
+    # Seed default agents and the local chief-of-staff workspace demonstration.
     logger.info("Seeding default agents...")
     from seed import load_default_agents
     load_default_agents()
+    seed_workspace_demo()
 
     logger.info("Database ready.")
     yield
@@ -81,6 +84,8 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(factory_router, prefix="/api/factory", tags=["Factory"])
 app.include_router(intelligence_router, prefix="/api", tags=["Intelligence"])
 app.include_router(monitoring_router, prefix="/api", tags=["Monitoring"])
+app.include_router(workspace_router, prefix="/api", tags=["Hermes Workspace"])
+app.include_router(clickup_router, prefix="/api/integrations", tags=["ClickUp Delegation"])
 
 
 # UI routes (must be after API routes)

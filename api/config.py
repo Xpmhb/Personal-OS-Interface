@@ -1,6 +1,7 @@
 import os
-from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -37,6 +38,14 @@ class Settings(BaseSettings):
     agents_dir: str = "/app/agents"
     chunk_size: int = 512
     chunk_overlap: int = 50
+
+    # Hermes chief-of-staff integrations (private server-side configuration)
+    hermes_api_base_url: str = ""
+    hermes_api_key: str = ""
+    cognee_base_url: str = ""
+    cognee_api_key: str = ""
+    clickup_webhook_secret: str = ""
+    hermes_clickup_mention: str = "@Hermes"
 
     # App
     debug: bool = False

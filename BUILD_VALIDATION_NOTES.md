@@ -1,0 +1,12 @@
+# Build Validation Notes
+
+- The Vite production build completed successfully after installing the declared front-end dependencies.
+- The FastAPI service started successfully on port 8001 after resolving two pre-existing requirement conflicts: `httpx` was updated from `0.26.0` to `0.27.2`, and `pydantic` from `2.5.3` to `2.7.4` to satisfy `langwatch==0.13.0`.
+- The new workspace API returned the seeded pilot work object successfully, with one active work item, one pending approval, and two evidence items. A new work-object POST was also verified.
+- Visual verification at `http://127.0.0.1:5173` showed only the page background and no mounted interactive elements. The browser console contained only the Tailwind CDN warning, so the next diagnostic step is to inspect the HTML entry module reference and ensure Vite loads `index.tsx`.
+
+The Vite entry reference was missing from `index.html`; adding `/index.tsx` restored the React mount. After setting the local API endpoint to port 8001 and restarting the Vite process, the browser displayed the full command center against the live FastAPI data. The live view correctly showed two durable work objects, the seeded evidence and pending approval counts, the ClickUp re-authorization status, and the expanded integration inventory. This confirms that the front end and the new workspace API communicate correctly in local development.
+
+The ClickUp integration foundation will verify the `X-Signature` header as an HMAC-SHA256 hexadecimal digest of the raw request body, using the webhook secret returned when ClickUp creates the webhook. Task and comment events carry `task_id`, while comment events additionally carry `comment.id`; these will form the external event-deduplication key before Hermes creates or updates a delegation record. The implementation will remain dormant until the user re-authorizes ClickUp and stores the webhook secret in the deployment secret store.
+
+The ClickUp receiver was tested with a locally generated HMAC-SHA256 signature for an explicit `@Hermes` comment. It created a draft-only work object with the correct queued status and source scope. Replaying the identical signed delivery returned `duplicate_ignored` and preserved the original work-object identifier. A local action lifecycle test then created an approval, resolved it as approved, and successfully wrote the linked ClickUp action receipt. The front-end production build now transforms 29 modules and completes successfully; the final API health and ClickUp integration-status routes both returned healthy responses.

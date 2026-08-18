@@ -141,3 +141,133 @@ class AccessLog(Base):
     action = Column(String(20))
     decision = Column(String(10))
     logged_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WorkObject(Base):
+    """A durable, source-grounded delegation that can span research, planning, approval, and execution."""
+    __tablename__ = "work_objects"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    title = Column(String(300), nullable=False)
+    objective = Column(Text, nullable=False)
+    completion_test = Column(Text)
+    status = Column(String(40), default="queued", nullable=False)
+    authority_lane = Column(String(40), default="draft_only", nullable=False)
+    source_scope = Column(JSON, default=list)
+    source_task_url = Column(String(1000))
+    owner_name = Column(String(200), default="You")
+    priority = Column(String(20), default="medium")
+    due_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class EvidenceItem(Base):
+    """A cited fact, meeting signal, or source excerpt associated with a work object."""
+    __tablename__ = "evidence_items"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    source_type = Column(String(50), nullable=False)
+    source_title = Column(String(500), nullable=False)
+    source_url = Column(String(1000))
+    excerpt = Column(Text, nullable=False)
+    confidence = Column(Float, default=0.8)
+    is_inference = Column(Integer, default=0)
+    captured_at = Column(DateTime, default=datetime.utcnow)
+
+
+class DecisionRecord(Base):
+    """Separates a recommendation and its assumptions from the cited evidence behind it."""
+    __tablename__ = "decision_records"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    recommendation = Column(Text, nullable=False)
+    rationale = Column(Text)
+    confidence = Column(Float, default=0.7)
+    status = Column(String(30), default="proposed")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    accepted_at = Column(DateTime)
+
+
+class PlanStep(Base):
+    """An editable execution step in a work object's plan."""
+    __tablename__ = "plan_steps"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(String(500), nullable=False)
+    description = Column(Text)
+    owner_name = Column(String(200), default="Hermes")
+    due_at = Column(DateTime)
+    status = Column(String(30), default="proposed")
+    risk_class = Column(String(30), default="read")
+    position = Column(Integer, default=0)
+    depends_on = Column(JSON, default=list)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ApprovalRequest(Base):
+    """An action-specific approval with an expiry and idempotency key."""
+    __tablename__ = "approval_requests"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    action_type = Column(String(100), nullable=False)
+    target_system = Column(String(100), nullable=False)
+    action_summary = Column(Text, nullable=False)
+    impact_summary = Column(Text)
+    risk_class = Column(String(30), default="reversible_write")
+    status = Column(String(30), default="pending", nullable=False)
+    idempotency_key = Column(String(100), unique=True, default=generate_uuid)
+    requested_by = Column(String(200), default="Hermes")
+    resolved_by = Column(String(200))
+    requested_at = Column(DateTime, default=datetime.utcnow)
+    resolved_at = Column(DateTime)
+    expires_at = Column(DateTime)
+
+
+class ActionReceipt(Base):
+    """An immutable result for a policy-checked external action."""
+    __tablename__ = "action_receipts"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    approval_id = Column(String(36), ForeignKey("approval_requests.id"))
+    target_system = Column(String(100), nullable=False)
+    operation = Column(String(200), nullable=False)
+    external_id = Column(String(300))
+    external_url = Column(String(1000))
+    summary = Column(Text, nullable=False)
+    compensation_hint = Column(Text)
+    status = Column(String(30), default="completed")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WorkEvent(Base):
+    """Append-only run timeline event for the command-center activity stream."""
+    __tablename__ = "work_events"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    work_object_id = Column(String(36), ForeignKey("work_objects.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(80), nullable=False)
+    message = Column(Text, nullable=False)
+    payload = Column(JSON, default=dict)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class WebhookDelivery(Base):
+    """Idempotency ledger for inbound connector events such as ClickUp webhooks."""
+    __tablename__ = "webhook_deliveries"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    provider = Column(String(80), nullable=False)
+    delivery_key = Column(String(500), nullable=False, unique=True, index=True)
+    event_type = Column(String(120), nullable=False)
+    external_task_id = Column(String(300))
+    external_comment_id = Column(String(300))
+    work_object_id = Column(String(36), ForeignKey("work_objects.id"))
+    received_at = Column(DateTime, default=datetime.utcnow)
+    payload = Column(JSON, default=dict)
