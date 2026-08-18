@@ -1,4 +1,4 @@
-"""ClickUp webhook foundation for explicit Hermes delegation.
+"""ClickUp webhook foundation for explicit XPM Jarvis delegation.
 
 The endpoint accepts signed inbound events only. It records every delivery before
 creating a work object so provider retries cannot duplicate work. A live ClickUp
@@ -57,8 +57,17 @@ def _delivery_key(payload: dict[str, Any], raw_body: bytes) -> tuple[str, str | 
     return f"{webhook_id}:{event_type}:{task_id or 'none'}:{comment_id or raw_hash}", task_id, comment_id
 
 
-def _is_hermes_delegation(payload: dict[str, Any]) -> bool:
-    mention = os.getenv("HERMES_CLICKUP_MENTION", "@Hermes").strip().lower()
+def _jarvis_mention() -> str:
+    """Read the product-facing trigger while supporting the previous pilot variable."""
+    return (
+        os.getenv("JARVIS_CLICKUP_MENTION")
+        or os.getenv("HERMES_CLICKUP_MENTION")
+        or "@Jarvis"
+    ).strip()
+
+
+def _is_jarvis_delegation(payload: dict[str, Any]) -> bool:
+    mention = _jarvis_mention().lower()
     event_type = str(payload.get("event") or "")
     if event_type != "taskCommentPosted":
         return False
@@ -74,7 +83,7 @@ def _pilot_scope() -> dict[str, str]:
 
 
 def _delegation_objective(payload: dict[str, Any]) -> str:
-    mention = os.getenv("HERMES_CLICKUP_MENTION", "@Hermes").strip()
+    mention = _jarvis_mention()
     text = _extract_comment_text(payload)
     stripped = re.sub(re.escape(mention), "", text, flags=re.IGNORECASE).strip(" :,-\n")
     return stripped or "Review the linked ClickUp task, gather scoped context, and propose an execution plan."
@@ -87,7 +96,7 @@ def clickup_status() -> dict[str, Any]:
         "provider": "ClickUp",
         "receiver_status": "configured" if configured else "awaiting_secret",
         "endpoint": "/api/integrations/clickup/webhook",
-        "mention": os.getenv("HERMES_CLICKUP_MENTION", "@Hermes"),
+        "mention": _jarvis_mention(),
         "action_mode": "draft_only",
         "pilot_scope": _pilot_scope(),
         "next_step": "Create the webhook for the configured pilot location and store its returned secret as CLICKUP_WEBHOOK_SECRET.",
@@ -96,7 +105,7 @@ def clickup_status() -> dict[str, Any]:
 
 @router.post("/clickup/webhook", status_code=status.HTTP_202_ACCEPTED)
 async def receive_clickup_webhook(request: Request, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """Verify and record a ClickUp event; create a draft-only work object for @Hermes comments."""
+    """Verify and record a ClickUp event; create a draft-only work object for @Jarvis comments."""
     raw_body = await request.body()
     provided_signature = request.headers.get("X-Signature", "")
     secret = _webhook_secret()
@@ -132,7 +141,7 @@ async def receive_clickup_webhook(request: Request, db: Session = Depends(get_db
     )
     db.add(delivery)
 
-    if not _is_hermes_delegation(payload):
+    if not _is_jarvis_delegation(payload):
         db.commit()
         return {"status": "recorded_no_delegation", "delivery_key": delivery_key, "event": event_type}
 
@@ -157,14 +166,14 @@ async def receive_clickup_webhook(request: Request, db: Session = Depends(get_db
         db,
         work.id,
         "clickup_delegation_received",
-        f"Explicit {os.getenv('HERMES_CLICKUP_MENTION', '@Hermes')} delegation received from ClickUp task {task_id or 'unknown'}.",
+        f"Explicit {_jarvis_mention()} delegation received from ClickUp task {task_id or 'unknown'}.",
         {"clickup_task_id": task_id, "clickup_comment_id": comment_id, "delivery_key": delivery_key, "pilot_scope": pilot},
     )
     add_event(
         db,
         work.id,
         "scope_pending",
-        "Hermes will gather scoped context and propose a plan. No ClickUp write has been authorized.",
+        "XPM Jarvis will gather scoped context and propose a plan. No ClickUp write has been authorized.",
     )
     db.commit()
     db.refresh(work)

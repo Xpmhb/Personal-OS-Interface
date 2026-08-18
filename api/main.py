@@ -64,8 +64,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Personal AI OS",
-    description="Spec-driven agent platform with RAG, monitoring, and nightly loops",
+    title="XPM Jarvis",
+    description="Governed operational intelligence and execution platform for XPM and its client tenants",
     version="0.1.0",
     lifespan=lifespan
 )
@@ -84,7 +84,7 @@ app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
 app.include_router(factory_router, prefix="/api/factory", tags=["Factory"])
 app.include_router(intelligence_router, prefix="/api", tags=["Intelligence"])
 app.include_router(monitoring_router, prefix="/api", tags=["Monitoring"])
-app.include_router(workspace_router, prefix="/api", tags=["Hermes Workspace"])
+app.include_router(workspace_router, prefix="/api", tags=["XPM Jarvis Control Plane"])
 app.include_router(clickup_router, prefix="/api/integrations", tags=["ClickUp Delegation"])
 
 

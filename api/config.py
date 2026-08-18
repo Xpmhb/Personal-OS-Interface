@@ -48,7 +48,9 @@ class Settings(BaseSettings):
     clickup_pilot_space_name: str = "Hunter's Dojo"
     clickup_pilot_list_id: str = "901415896119"
     clickup_pilot_list_name: str = "Live MVP Test Sprint"
-    hermes_clickup_mention: str = "@Hermes"
+    jarvis_clickup_mention: str = "@Jarvis"
+    # Backward-compatible runtime-era setting; new deployments should use JARVIS_CLICKUP_MENTION.
+    hermes_clickup_mention: str = ""
 
     # App
     debug: bool = False

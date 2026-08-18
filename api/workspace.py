@@ -1,7 +1,7 @@
-"""Hermes chief-of-staff workspace API.
+"""XPM Jarvis operational intelligence control-plane API.
 
 The product control plane lives here: a durable work object records the user's
-objective, supporting evidence, plan, approvals, and action receipts. Hermes
+objective, supporting evidence, plan, approvals, and action receipts. XPM Jarvis
 and external connectors can propose work, but this layer remains authoritative
 for policy-visible state and operator-facing history.
 """
@@ -43,7 +43,7 @@ class WorkObjectCreate(BaseModel):
 class PlanStepCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    owner_name: str = "Hermes"
+    owner_name: str = "XPM Jarvis"
     risk_class: str = "read"
     position: int = 0
     depends_on: list[str] = Field(default_factory=list)
@@ -264,8 +264,8 @@ def seed_workspace_demo() -> None:
         if db.query(WorkObject).count() > 0:
             return
         work = WorkObject(
-            title="Launch the Hermes chief-of-staff pilot",
-            objective="Validate the @Hermes delegation workflow with a real ClickUp project and meeting evidence.",
+            title="Launch the XPM Jarvis operating pilot",
+            objective="Validate the @Jarvis delegation workflow for XPM operations with a real ClickUp project and meeting evidence.",
             completion_test="A delegated ClickUp task produces a cited plan, an approved task update, and a receipt without duplicate writes.",
             status="awaiting_approval",
             authority_lane="draft_only",
@@ -280,7 +280,7 @@ def seed_workspace_demo() -> None:
             EvidenceItem(
                 work_object_id=work.id,
                 source_type="ClickUp",
-                source_title="Personal OS Interface — Hermes build task",
+                source_title="XPM Jarvis control-plane build task",
                 excerpt="The task requires a first working command center, durable delegation state, approvals, and ClickUp foundations.",
                 confidence=0.96,
             ),
@@ -307,7 +307,7 @@ def seed_workspace_demo() -> None:
                     work_object_id=work.id,
                     title="Complete the command-center foundation",
                     description="Create work objects, plan board, evidence view, approval cards, and timeline.",
-                    owner_name="Hermes",
+                    owner_name="XPM Jarvis",
                     risk_class="read",
                     position=1,
                 ),
@@ -321,9 +321,9 @@ def seed_workspace_demo() -> None:
                 ),
                 PlanStep(
                     work_object_id=work.id,
-                    title="Run the first @Hermes delegation",
+                    title="Run the first @Jarvis delegation",
                     description="Research the context, review the plan, approve an exact ClickUp write, and verify the receipt.",
-                    owner_name="Hermes",
+                    owner_name="XPM Jarvis",
                     risk_class="reversible_write",
                     position=3,
                     depends_on=["Complete the command-center foundation", "Re-authorize ClickUp and configure the pilot list"],
@@ -341,7 +341,7 @@ def seed_workspace_demo() -> None:
                 expires_at=datetime.utcnow() + timedelta(days=2),
             )
         )
-        add_event(db, work.id, "work_created", "Hermes created a durable delegation contract for the pilot.")
+        add_event(db, work.id, "work_created", "XPM Jarvis created a durable delegation contract for the pilot.")
         add_event(db, work.id, "evidence_ready", "Evidence pack assembled from scoped work context.")
         add_event(db, work.id, "approval_requested", "A ClickUp write is ready for action-specific approval.")
         db.commit()
@@ -378,10 +378,10 @@ def get_dashboard(db: Session = Depends(get_db)) -> dict[str, Any]:
 def integration_status() -> list[dict[str, Any]]:
     return [
         {
-            "id": "hermes",
-            "name": "Hermes Agent",
+            "id": "jarvis",
+            "name": "XPM Jarvis",
             "status": "ready" if os.getenv("HERMES_API_BASE_URL") else "scaffolded",
-            "detail": "Private agent API is configured when HERMES_API_BASE_URL and HERMES_API_KEY are present.",
+            "detail": "The XPM Jarvis control plane connects to its private agent runtime when HERMES_API_BASE_URL and HERMES_API_KEY are present.",
         },
         {
             "id": "cognee",
@@ -533,13 +533,13 @@ def create_event(work_id: str, payload: EventCreate, db: Session = Depends(get_d
 
 @router.post("/work-objects/{work_id}/research-draft")
 def generate_research_draft(work_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
-    """Create a transparent placeholder research result until live Hermes credentials are connected."""
+    """Create a transparent placeholder research result until the live Jarvis runtime is connected."""
     work = get_work_or_404(db, work_id)
     work.status = "planning"
     decision = DecisionRecord(
         work_object_id=work_id,
         recommendation="Validate the requested outcome with scoped sources, then convert confirmed commitments into ClickUp-ready tasks.",
-        rationale="Live Hermes and ClickUp credentials are not connected yet, so this is a transparent scaffold rather than a model-generated claim.",
+        rationale="The live XPM Jarvis runtime and ClickUp credentials are not connected yet, so this is a transparent scaffold rather than a model-generated claim.",
         confidence=0.55,
         status="proposed",
     )
@@ -554,7 +554,8 @@ def workspace_health() -> dict[str, Any]:
     return {
         "status": "ok",
         "control_plane": "ready",
-        "hermes_api_configured": bool(os.getenv("HERMES_API_BASE_URL") and os.getenv("HERMES_API_KEY")),
+        "jarvis_runtime_configured": bool(os.getenv("HERMES_API_BASE_URL") and os.getenv("HERMES_API_KEY")),
+        "hermes_runtime_configured": bool(os.getenv("HERMES_API_BASE_URL") and os.getenv("HERMES_API_KEY")),
         "cognee_configured": bool(os.getenv("COGNEE_BASE_URL")),
         "timestamp": datetime.utcnow().isoformat(),
     }
