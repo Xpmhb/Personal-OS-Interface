@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     cognee_base_url: str = ""
     cognee_api_key: str = ""
     clickup_webhook_secret: str = ""
+    clickup_pilot_space_name: str = "Hunter's Dojo"
+    clickup_pilot_list_id: str = "901415896119"
+    clickup_pilot_list_name: str = "Live MVP Test Sprint"
     hermes_clickup_mention: str = "@Hermes"
 
     # App

@@ -65,6 +65,14 @@ def _is_hermes_delegation(payload: dict[str, Any]) -> bool:
     return mention in _extract_comment_text(payload).lower()
 
 
+def _pilot_scope() -> dict[str, str]:
+    return {
+        "space_name": os.getenv("CLICKUP_PILOT_SPACE_NAME", "Hunter's Dojo"),
+        "list_id": os.getenv("CLICKUP_PILOT_LIST_ID", "901415896119"),
+        "list_name": os.getenv("CLICKUP_PILOT_LIST_NAME", "Live MVP Test Sprint"),
+    }
+
+
 def _delegation_objective(payload: dict[str, Any]) -> str:
     mention = os.getenv("HERMES_CLICKUP_MENTION", "@Hermes").strip()
     text = _extract_comment_text(payload)
@@ -81,7 +89,8 @@ def clickup_status() -> dict[str, Any]:
         "endpoint": "/api/integrations/clickup/webhook",
         "mention": os.getenv("HERMES_CLICKUP_MENTION", "@Hermes"),
         "action_mode": "draft_only",
-        "next_step": "Re-authorize ClickUp, create the webhook, and store its returned secret as CLICKUP_WEBHOOK_SECRET.",
+        "pilot_scope": _pilot_scope(),
+        "next_step": "Create the webhook for the configured pilot location and store its returned secret as CLICKUP_WEBHOOK_SECRET.",
     }
 
 
@@ -129,13 +138,14 @@ async def receive_clickup_webhook(request: Request, db: Session = Depends(get_db
 
     task_name = str((payload.get("task") or {}).get("name") or f"ClickUp task {task_id or 'unknown'}")
     objective = _delegation_objective(payload)
+    pilot = _pilot_scope()
     work = WorkObject(
         title=f"ClickUp · {task_name}",
         objective=objective,
         completion_test="Produce a source-linked plan and request approval before any external ClickUp write.",
         status="queued",
         authority_lane="draft_only",
-        source_scope=["clickup", "otter", "cognee"],
+        source_scope=["clickup", f"clickup:list:{pilot['list_id']}", "otter", "cognee"],
         source_task_url=f"https://app.clickup.com/t/{task_id}" if task_id else None,
         owner_name="You",
         priority="medium",
@@ -148,7 +158,7 @@ async def receive_clickup_webhook(request: Request, db: Session = Depends(get_db
         work.id,
         "clickup_delegation_received",
         f"Explicit {os.getenv('HERMES_CLICKUP_MENTION', '@Hermes')} delegation received from ClickUp task {task_id or 'unknown'}.",
-        {"clickup_task_id": task_id, "clickup_comment_id": comment_id, "delivery_key": delivery_key},
+        {"clickup_task_id": task_id, "clickup_comment_id": comment_id, "delivery_key": delivery_key, "pilot_scope": pilot},
     )
     add_event(
         db,

@@ -69,7 +69,7 @@ The local API creates a demonstration work object at startup. Open the command c
 
 ## ClickUp Delegation Activation
 
-The webhook receiver is present at:
+The confirmed first pilot is **Hunter’s Dojo → Live MVP Test Sprint** (`901415896119`). The webhook receiver is present at:
 
 ```text
 POST /api/integrations/clickup/webhook
@@ -80,7 +80,7 @@ ClickUp signs each payload with HMAC-SHA256 and sends the hexadecimal digest in 
 | Activation step | Owner | Why it is required |
 |---|---|---|
 | Re-authorize ClickUp | User | The existing ClickUp connection needs renewal before live delegation can access real workspace content. |
-| Create a ClickUp webhook for the chosen workspace/location | User with Hermes guidance | ClickUp returns a unique webhook secret when it creates the webhook. |
+| Create a ClickUp webhook for Hunter’s Dojo → Live MVP Test Sprint | User with Hermes guidance | ClickUp returns a unique webhook secret when it creates the webhook. |
 | Store `CLICKUP_WEBHOOK_SECRET` in the production secret store | User or deployment administrator | Enables server-side signature verification without exposing the secret to the browser. |
 | Expose the endpoint over authenticated HTTPS | Deployment | ClickUp needs a reachable callback URL; Hermes, Cognee, and the database remain private. |
 | Run one explicitly approved pilot | User and Hermes | Validates evidence, planning, approval, idempotency, and the resulting action receipt before standing authority is considered. |
@@ -106,3 +106,15 @@ The system should not receive standing authority for credentials, access managem
 ## Validation Completed
 
 The current implementation has been locally verified for front-end production compilation, API startup, durable work-object creation, workspace-dashboard retrieval, signed ClickUp delegation creation, duplicate webhook delivery handling, and the approval-to-action-receipt lifecycle. See [`BUILD_VALIDATION_NOTES.md`](BUILD_VALIDATION_NOTES.md) for the local validation record.
+
+## Production Container Topology
+
+The repository now includes `Dockerfile.web`, `deploy/nginx.conf`, and `docker-compose.prod.yml`. The production overlay places the React interface behind a same-origin Nginx edge. The browser calls `/api`; Nginx forwards those requests to the private FastAPI service. PostgreSQL, Qdrant, the API, and worker have no public host ports in the overlay.
+
+Start the production-shaped local stack with:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+```
+
+For the preferred Google Cloud deployment, run this stack on a private Compute Engine VM behind HTTPS, store environment variables in Secret Manager or an equivalent server-side secret service, and expose only the authenticated web edge. The future public ClickUp callback should terminate at the same HTTPS edge and proxy only `/api/integrations/clickup/webhook` to the private API.

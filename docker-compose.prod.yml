@@ -1,0 +1,41 @@
+services:
+  api:
+    restart: unless-stopped
+    ports: []
+    env_file: .env
+    networks:
+      - hermes_internal
+
+  worker:
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - hermes_internal
+
+  postgres:
+    restart: unless-stopped
+    ports: []
+    networks:
+      - hermes_internal
+
+  qdrant:
+    restart: unless-stopped
+    ports: []
+    networks:
+      - hermes_internal
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - hermes_internal
+
+networks:
+  hermes_internal:
+    driver: bridge
