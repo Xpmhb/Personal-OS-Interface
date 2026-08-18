@@ -13,7 +13,7 @@ exec > >(tee -a "${LOG_FILE}") 2>&1
 echo "[$(date --iso-8601=seconds)] Starting Hermes bootstrap"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends git docker.io docker-compose-plugin ca-certificates
+apt-get install -y --no-install-recommends git docker.io docker-compose ca-certificates
 systemctl enable --now docker
 
 if [[ -d "${APP_DIR}/.git" ]]; then
@@ -32,6 +32,14 @@ fi
 
 # The web edge can start without provider credentials. Agent tools and incoming
 # ClickUp events remain inert until real values replace placeholders in .env.
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE=(docker compose)
+elif command -v docker-compose >/dev/null 2>&1; then
+  COMPOSE=(docker-compose)
+else
+  echo "Docker Compose is unavailable after package installation" >&2
+  exit 1
+fi
+"${COMPOSE[@]}" -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 echo "[$(date --iso-8601=seconds)] Hermes bootstrap completed"
