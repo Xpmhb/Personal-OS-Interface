@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Bootstrap the Hermes Chief-of-Staff pilot host on Debian-based Compute Engine VMs.
-# This script intentionally contains no credentials. Populate /opt/hermes/.env
-# with production secrets before activating model-backed Hermes, Cognee, or ClickUp work.
+# Bootstrap the XPM Jarvis control-plane host on Debian-based Compute Engine VMs.
+# This script intentionally contains no credentials. Populate /opt/xpm-jarvis/.env
+# with production secrets before activating the Jarvis runtime, Cognee, or ClickUp work.
 set -euo pipefail
 
 REPO_URL="https://github.com/Xpmhb/Personal-OS-Interface.git"
-APP_DIR="/opt/hermes"
-LOG_FILE="/var/log/hermes-bootstrap.log"
+APP_DIR="/opt/xpm-jarvis"
+LOG_FILE="/var/log/xpm-jarvis-bootstrap.log"
 
 exec > >(tee -a "${LOG_FILE}") 2>&1
 
-echo "[$(date --iso-8601=seconds)] Starting Hermes bootstrap"
+echo "[$(date --iso-8601=seconds)] Starting XPM Jarvis bootstrap"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends git docker.io docker-compose ca-certificates
@@ -42,4 +42,4 @@ else
 fi
 "${COMPOSE[@]}" -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
-echo "[$(date --iso-8601=seconds)] Hermes bootstrap completed"
+echo "[$(date --iso-8601=seconds)] XPM Jarvis bootstrap completed"
